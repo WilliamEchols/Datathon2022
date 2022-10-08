@@ -29,6 +29,7 @@ const twilioClient = twilio(apiKey, apiKeySecret, { accountSid: accountSid });
 app.use(express.json());
 app.use(express.static('public'));
 
+
 app.get('/', (req, res) => {
   res.sendFile('public/index.html', { root: __dirname });
 });
@@ -40,9 +41,7 @@ app.get('/watch', (req, res) => {
 });
 
 
-
 // cohere classification
-
 cohere.init(`${cohereApiKeySecret}`); 
 
 (async () => { 
