@@ -11,7 +11,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 // auth
 const AccessToken = twilio.jwt.AccessToken;
