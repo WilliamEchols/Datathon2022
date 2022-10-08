@@ -4,6 +4,7 @@ import { dirname } from 'path';
 import express from 'express';
 import crypto from 'crypto';
 import twilio from 'twilio';
+import cohere from 'cohere-ai'
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ const PlaybackGrant = AccessToken.PlaybackGrant;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const apiKey = process.env.TWILIO_API_KEY_SID;
 const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+const cohereApiKeySecret = process.env.COHERE_API_KEY_SECRET;
 
 const twilioClient = twilio(apiKey, apiKeySecret, { accountSid: accountSid });
 
@@ -36,6 +38,21 @@ app.get('/stream', (req, res) => {
 app.get('/watch', (req, res) => {
   res.sendFile('public/audience.html', { root: __dirname });
 });
+
+
+
+// cohere classification
+
+cohere.init(`${cohereApiKeySecret}`); 
+
+(async () => { 
+  const response = await cohere.classify({ 
+    model: 'cohere-toxicity', 
+    inputs: ["hello"] 
+  }); 
+  console.log(`The confidence levels of the labels are ${JSON.stringify(response.body.classifications)}`); 
+})(); 
+
 
 /**
  * Start a new livestream with a Video Room, PlayerStreamer, and MediaProcessor
@@ -152,10 +169,12 @@ app.post('/audienceToken', async (req, res) => {
   // Generate a random string for the identity
   const identity = crypto.randomBytes(20).toString('hex');
 
+  var playerStreamer = req.body['streamId']
+
   try {
     // Get the first player streamer
-    const playerStreamerList = await twilioClient.media.playerStreamer.list({status: 'started'});
-    const playerStreamer = playerStreamerList.length ? playerStreamerList[0] : null;
+    //const playerStreamerList = await twilioClient.media.playerStreamer.list({status: 'started'});
+    //const playerStreamer = playerStreamerList.length ? playerStreamerList[0] : null;
 
     // If no one is streaming, return a message
     if (!playerStreamer){
@@ -168,7 +187,7 @@ app.post('/audienceToken', async (req, res) => {
     const token = new AccessToken(accountSid, apiKey, apiKeySecret);
 
     // Create a playback grant and attach it to the access token
-    const playbackGrant = await twilioClient.media.playerStreamer(playerStreamer.sid).playbackGrant().create({ttl: 60});
+    const playbackGrant = await twilioClient.media.playerStreamer(playerStreamer).playbackGrant().create({ttl: 60});
 
     const wrappedPlaybackGrant = new PlaybackGrant({
       grant: playbackGrant.grant
@@ -188,6 +207,26 @@ app.post('/audienceToken', async (req, res) => {
       error
     });
   }
+});
+
+// custom
+app.post('/currentlive', async (req, res) => { // returns list of playerStreamer tokens for live streams
+  const playerStreamerList = await twilioClient.media.playerStreamer.list({status: 'started'});
+
+  // If no one is streaming, return a message
+  if (playerStreamerList.length == 0){
+    return res.status(200).send({ message: `No one is streaming right now` })
+  }
+
+  var liveSIDs = []
+  for (var i = 0; i < playerStreamerList.length; i++) {
+    liveSIDs.push(playerStreamerList[i].sid)
+  }
+
+  return res.send({
+    liveSIDs: liveSIDs
+  });
+
 });
 
 

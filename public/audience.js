@@ -1,3 +1,9 @@
+// determine streaming id
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
+const streamId = urlParams.get('id')
+
 const streamPlayer = document.getElementById('player');
 const startEndButton = document.getElementById('streamStartEnd');
 
@@ -10,7 +16,8 @@ const watchStream = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
+      body: JSON.stringify({ 'streamId': `${streamId}` })
     });
 
     const data = await response.json();
