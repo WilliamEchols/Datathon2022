@@ -13,7 +13,6 @@ const app = express();
 const port = 8080;
 
 // auth
-/*
 const AccessToken = twilio.jwt.AccessToken;
 const VideoGrant = AccessToken.VideoGrant;
 const PlaybackGrant = AccessToken.PlaybackGrant;
@@ -23,7 +22,6 @@ const apiKey = process.env.TWILIO_API_KEY_SID;
 const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 
 const twilioClient = twilio(apiKey, apiKeySecret, { accountSid: accountSid });
-*/
 
 // routing
 app.use(express.json());
