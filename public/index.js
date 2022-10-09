@@ -11,7 +11,7 @@ const loadStreams = async () => {
   const data = await response.json();
 
   if (!data.message) {
-    for (var i = 0; i < data.liveSIDs.length; i++) {
+    for (var i = 0; i < data.currentStreams.length; i++) {
         dom.innerHTML += `
         <!-- Livestream Card -->
         <a href=/watch?id=${data.liveSIDs[i]}>
@@ -25,15 +25,15 @@ const loadStreams = async () => {
         <!-- Card Picture and Info -->
         <img class="w-full" src="/img/sample.png" alt="Sunset in the mountains">
         <div class="px-6 py-4">
-            <div class="font-bold text-xl mb-2">TODO: Title</div>
-            <p class="text-gray-700 text-base">TODO: Name</p>
+            <div class="font-bold text-xl mb-2">${data['currentStreams'][i]['streamName']}</div>
+            <p class="text-gray-700 text-base">live now</p>
             </div>
         </div>
         </a>
         `
     }
   } else {
-    dom.innerHTML += 'No one is streaming at the moment'
+    dom.innerHTML += '<a class="mx-5">No one is streaming at the moment</a>'
   }
 
 }

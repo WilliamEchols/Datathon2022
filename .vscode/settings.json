@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/ffd00bb9-7cd6-4514-857f-cad4257a084c/resourceGroups/appsvc_linux_centralus_basic/providers/Microsoft.Web/sites/friendlylivecli",
+    "appService.deploySubpath": "."
+}

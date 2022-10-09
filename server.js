@@ -5,13 +5,36 @@ import express from 'express';
 import crypto from 'crypto';
 import twilio from 'twilio';
 import cohere from 'cohere-ai'
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
 
 dotenv.config();
 
+// app config
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
 const port = process.env.PORT || 8080;
+const server = http.createServer(app);
+
+// socket
+const io = new Server (server, { 
+  cors: {
+    origins: ["http://localhost"],
+    methods: ["GET", "POST"],
+    optionsSuccessStatus: 200,
+  }
+});
+io.on('connection', (socket) => {
+  socket.on('new_chat', (data) => {
+    //console.log(JSON.stringify(data, 4, null));
+    io.sockets.emit('update_all_chats', data);
+  });
+});
+
+app.use(cors());
+
 
 // auth
 const AccessToken = twilio.jwt.AccessToken;
@@ -44,21 +67,26 @@ app.get('/watch', (req, res) => {
 // cohere classification
 cohere.init(`${cohereApiKeySecret}`); 
 
-(async () => { 
+app.post('/classify', async (req, res) => {
+  const text = req.body.text;
+  
   const response = await cohere.classify({ 
     model: 'cohere-toxicity', 
-    inputs: ["hello"] 
+    inputs: [text] 
   }); 
-  console.log(`The confidence levels of the labels are ${JSON.stringify(response.body.classifications)}`); 
-})(); 
 
+  return res.send({
+    'classification': response.body.classifications
+  });
 
-/**
- * Start a new livestream with a Video Room, PlayerStreamer, and MediaProcessor
- */
+});
+
+// current livestream information
+var currentStreams = [];
+
 app.post('/start', async (req, res) => {
-  const streamName  = req.body.streamName;
-
+    const streamName  = req.body.streamName;
+  
   try {
     // Create the WebRTC Go video room, PlayerStreamer, and MediaProcessors
     const room = await twilioClient.video.rooms.create({
@@ -81,12 +109,17 @@ app.post('/start', async (req, res) => {
       })
     })
 
+    // new object for server tracking and to send to client
+    currentStreams.push({
+        streamName: streamName
+      })
+
     return res.status(200).send({
-      roomId: room.sid,
-      streamName: streamName,
-      playerStreamerId: playerStreamer.sid,
-      mediaProcessorId: mediaProcessor.sid
-    });
+        roomId: room.sid,
+        streamName: streamName,
+        playerStreamerId: playerStreamer.sid,
+        mediaProcessorId: mediaProcessor.sid
+      });
 
   } catch(error) {
     return res.status(400).send({
@@ -96,10 +129,6 @@ app.post('/start', async (req, res) => {
   }
 })
 
-
-/**
- * End a livestream
- */
 app.post('/end', async (req, res) => {
   const streamDetails = req.body.streamDetails;
 
@@ -114,6 +143,11 @@ app.post('/end', async (req, res) => {
     await twilioClient.media.playerStreamer(playerStreamerId).update({status: 'ended'});
     await twilioClient.video.rooms(roomId).update({status: 'completed'});
 
+    // remove from storage
+    currentStreams = currentStreams.filter(function( stream ) {
+        return stream['streamName'] !== streamName;
+    });
+
     return res.status(200).send({
       message: `Successfully ended stream ${streamName}`
     });
@@ -126,10 +160,6 @@ app.post('/end', async (req, res) => {
   }
 });
 
-
-/**
- * Get an Access Token for a streamer
- */
 app.post('/streamerToken', async (req, res) => {
   if (!req.body.identity || !req.body.room) {
     return res.status(400).send({ message: `Missing identity or stream name` });
@@ -161,9 +191,7 @@ app.post('/streamerToken', async (req, res) => {
     return res.status(400).send({error});
   }
 });
-/**
- * Get an Access Token for an audience member
- */
+
 app.post('/audienceToken', async (req, res) => {
   // Generate a random string for the identity
   const identity = crypto.randomBytes(20).toString('hex');
@@ -223,12 +251,12 @@ app.post('/currentlive', async (req, res) => { // returns list of playerStreamer
   }
 
   return res.send({
-    liveSIDs: liveSIDs
+    liveSIDs: liveSIDs, currentStreams: currentStreams
   });
 
 });
 
 
-app.listen(port, async () => {
+server.listen(port, async () => {
   console.log(`Express server running on port ${port}`);
 });

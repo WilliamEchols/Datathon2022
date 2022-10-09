@@ -57,8 +57,8 @@ const startStream = async (streamName, identity) => {
   stream.insertBefore(liveNotification, video);
 
   startEndButton.disabled = false;
-  startEndButton.classList.replace('bg-green-500', 'bg-red-500');
-  startEndButton.classList.replace('hover:bg-green-500', 'hover:bg-red-700');
+  startEndButton.classList.replace('bg-purple-500', 'bg-red-500');
+  startEndButton.classList.replace('hover:bg-purple-500', 'hover:bg-red-700');
 }
 
 const endStream = async () => {
@@ -81,8 +81,8 @@ const endStream = async () => {
       liveNotification.remove();
 
       startEndButton.innerHTML = 'start stream';
-      startEndButton.classList.replace('bg-red-500', 'bg-green-500');
-      startEndButton.classList.replace('hover:bg-red-500', 'hover:bg-green-700');
+      startEndButton.classList.replace('bg-red-500', 'bg-purple-500');
+      startEndButton.classList.replace('hover:bg-red-500', 'hover:bg-purple-700');
       identityInput.disabled = false;
       streamNameInput.disabled = false;
 
