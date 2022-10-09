@@ -18,6 +18,9 @@ const app = express();
 const port = process.env.PORT || 8080;
 const server = http.createServer(app);
 
+// current livestream information
+var currentStreams = [];
+
 // socket
 const io = new Server (server, { 
   cors: {
@@ -28,7 +31,8 @@ const io = new Server (server, {
 });
 io.on('connection', (socket) => {
   socket.on('new_chat', (data) => {
-    //console.log(JSON.stringify(data, 4, null));
+    //console.log(JSON.stringify(data['streamId'], 4, null));
+
     io.sockets.emit('update_all_chats', data);
   });
 });
@@ -81,8 +85,7 @@ app.post('/classify', async (req, res) => {
 
 });
 
-// current livestream information
-var currentStreams = [];
+
 
 app.post('/start', async (req, res) => {
     const streamName  = req.body.streamName;
@@ -111,7 +114,9 @@ app.post('/start', async (req, res) => {
 
     // new object for server tracking and to send to client
     currentStreams.push({
-        streamName: streamName
+        streamName: streamName,
+        positiveNum: 0,
+        negativeNum: 0
       })
 
     return res.status(200).send({
